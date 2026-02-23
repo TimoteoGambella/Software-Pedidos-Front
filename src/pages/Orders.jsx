@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import Layout from '../components/Layout';
 import api from '../config/api';
 import { toast } from 'react-toastify';
-import { FiPlus, FiTrash2, FiEye, FiDownload, FiEdit2 } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiEye, FiDownload, FiEdit2, FiMail, FiX, FiFileText } from 'react-icons/fi';
 import { ClipLoader } from 'react-spinners';
 import { formatCurrency } from '../utils/formatters';
 
@@ -57,9 +57,41 @@ const Orders = () => {
     efectivo: '',
   });
 
+  // Email modal state
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [emailModalOrder, setEmailModalOrder] = useState(null);
+  const [emailForm, setEmailForm] = useState({
+    email: '',
+    subject: '',
+    body: '',
+  });
+  const [emailAttachments, setEmailAttachments] = useState({
+    excel: true,
+    pdf: false,
+  });
+  const [sendingEmail, setSendingEmail] = useState(false);
+
+  // Estado de guardado
+  const [isSavedInDB, setIsSavedInDB] = useState(true); // true cuando está en la lista, false cuando está creando nuevo
+  const [draftLoaded, setDraftLoaded] = useState(false); // Flag para saber si ya se cargó el borrador
+  
+  // Estado local para el input de búsqueda (con debounce)
+  const [searchInput, setSearchInput] = useState('');
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+
   useEffect(() => {
     fetchData();
   }, [filters, pagination.page, sortBy, sortOrder]);
+
+  // Debounce para el filtro de búsqueda (500ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setFilters(prev => ({ ...prev, search: searchInput }));
+      setPagination(prev => ({ ...prev, page: 1 })); // Reset a página 1
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   useEffect(() => {
     // Fetch clientes y vendedores solo una vez
@@ -68,6 +100,64 @@ const Orders = () => {
     const today = new Date().toLocaleDateString('es-AR');
     setFechaPlanilla(today);
   }, []);
+
+  // Cargar borrador desde localStorage al entrar en modo creación
+  useEffect(() => {
+    if (viewMode === 'create' && !editingOrderId && !draftLoaded) {
+      const savedDraft = localStorage.getItem('draftOrder');
+      if (savedDraft) {
+        try {
+          const draft = JSON.parse(savedDraft);
+          // Verificar que el borrador no sea muy viejo (más de 7 días)
+          const daysSinceLastEdit = (Date.now() - draft.timestamp) / (1000 * 60 * 60 * 24);
+          if (daysSinceLastEdit < 7) {
+            setSelectedClient(draft.selectedClient || '');
+            setVendedor(draft.vendedor || '');
+            setTipoPlanilla(draft.tipoPlanilla || '');
+            setItems(draft.items || []);
+            setObservaciones(draft.observaciones || '');
+            setComisiones(draft.comisiones || '');
+            setFechaPlanilla(draft.fechaPlanilla || new Date().toLocaleDateString('es-AR'));
+            
+            // Actualizar vendedorData si existe
+            if (draft.vendedor && vendedores.length > 0) {
+              const vData = vendedores.find(v => v._id === draft.vendedor);
+              if (vData) setVendedorData(vData);
+            }
+            
+            toast.info('Borrador recuperado desde la última sesión');
+          } else {
+            // Borrador muy viejo, eliminarlo
+            localStorage.removeItem('draftOrder');
+          }
+        } catch (error) {
+          console.error('Error al cargar borrador:', error);
+          localStorage.removeItem('draftOrder');
+        }
+      }
+      setDraftLoaded(true);
+    } else if (viewMode !== 'create') {
+      setDraftLoaded(false);
+    }
+  }, [viewMode, editingOrderId, vendedores, draftLoaded]);
+
+  // Auto-guardar en localStorage cuando se está creando un nuevo pedido
+  useEffect(() => {
+    if (viewMode === 'create' && !editingOrderId && draftLoaded) {
+      const draftOrder = {
+        selectedClient,
+        vendedor,
+        tipoPlanilla,
+        items,
+        observaciones,
+        comisiones,
+        fechaPlanilla,
+        timestamp: Date.now(),
+      };
+      localStorage.setItem('draftOrder', JSON.stringify(draftOrder));
+      setIsSavedInDB(false);
+    }
+  }, [viewMode, editingOrderId, draftLoaded, selectedClient, vendedor, tipoPlanilla, items, observaciones, comisiones, fechaPlanilla]);
 
   const fetchClientsAndVendedores = async () => {
     try {
@@ -111,9 +201,11 @@ const Orders = () => {
         ...response.data.pagination
       }));
       setLoading(false);
+      setIsFirstLoad(false);
     } catch (error) {
       toast.error('Error al cargar pedidos');
       setLoading(false);
+      setIsFirstLoad(false);
     }
   };
 
@@ -124,6 +216,42 @@ const Orders = () => {
 
   const handlePageChange = (newPage) => {
     setPagination(prev => ({ ...prev, page: newPage }));
+  };
+
+  // Función para formatear fecha automáticamente (DD/MM/YYYY)
+  const formatDateInput = (value) => {
+    // Eliminar todo lo que no sea número
+    const numbers = value.replace(/\D/g, '');
+    
+    // Limitar a 8 dígitos (DDMMYYYY)
+    const limited = numbers.slice(0, 8);
+    
+    // Formatear con barras
+    let formatted = limited;
+    if (limited.length >= 3) {
+      formatted = limited.slice(0, 2) + '/' + limited.slice(2);
+    }
+    if (limited.length >= 5) {
+      formatted = limited.slice(0, 2) + '/' + limited.slice(2, 4) + '/' + limited.slice(4);
+    }
+    
+    return formatted;
+  };
+
+  // Función para normalizar fecha a DD/MM/YYYY (asegura 2 dígitos)
+  const normalizeDate = (dateStr) => {
+    if (!dateStr) return '';
+    
+    // Si ya es una fecha válida con formato correcto, devolverla
+    const parts = dateStr.split('/');
+    if (parts.length === 3) {
+      const day = parts[0].padStart(2, '0');
+      const month = parts[1].padStart(2, '0');
+      const year = parts[2];
+      return `${day}/${month}/${year}`;
+    }
+    
+    return dateStr;
   };
 
   const handleClientChange = (clientId) => {
@@ -250,7 +378,7 @@ const Orders = () => {
         items,
         observaciones,
         comisiones: parseFloat(comisiones) || 0,
-        fechaPlanilla,
+        fechaPlanilla: normalizeDate(fechaPlanilla),
       };
 
       if (editingOrderId) {
@@ -261,8 +389,11 @@ const Orders = () => {
         // Crear nuevo pedido
         await api.post('/orders', orderData);
         toast.success('Pedido creado exitosamente');
+        // Limpiar localStorage después de guardar exitosamente
+        localStorage.removeItem('draftOrder');
       }
       
+      setIsSavedInDB(true);
       resetForm();
       setViewMode('list');
       fetchData();
@@ -298,6 +429,10 @@ const Orders = () => {
       fecha: '',
       efectivo: '',
     });
+    // Limpiar localStorage
+    localStorage.removeItem('draftOrder');
+    setIsSavedInDB(true);
+    setDraftLoaded(false);
   };
 
   const handleDelete = async (id) => {
@@ -359,6 +494,117 @@ const Orders = () => {
     } catch (error) {
       toast.error('Error al descargar Excel');
       console.error(error);
+    }
+  };
+
+  const handleDownloadPDF = async (order) => {
+    try {
+      const response = await api.get(`/orders/${order._id}/pdf`, {
+        responseType: 'blob',
+      });
+      
+      // Generar nombre de archivo: Planilla - ClientName - Fecha
+      const clientName = order.client?.name || order.client?.company || 'Cliente';
+      const fecha = order.fechaPlanilla || new Date(order.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+      const fileName = `Planilla - ${clientName} - ${fecha}.pdf`;
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success('PDF descargado');
+    } catch (error) {
+      toast.error('Error al descargar PDF');
+      console.error(error);
+    }
+  };
+
+  const handleOpenEmailModal = (order) => {
+    setEmailModalOrder(order);
+    const clientEmail = order.client?.email || '';
+    const clientName = order.client?.name || order.client?.company || 'Cliente';
+    const fecha = order.fechaPlanilla || new Date(order.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+    
+    setEmailForm({
+      email: clientEmail,
+      subject: `Planilla de Cobranzas - ${clientName} - ${fecha}`,
+      body: `Estimado/a,\n\nAdjunto encontrará la planilla de cobranzas correspondiente.\n\nSaludos cordiales.`,
+    });
+    setEmailAttachments({
+      excel: true,
+      pdf: false,
+    });
+    setEmailModalOpen(true);
+  };
+
+  const handleCloseEmailModal = () => {
+    setEmailModalOpen(false);
+    setEmailModalOrder(null);
+    setEmailForm({
+      email: '',
+      subject: '',
+      body: '',
+    });
+    setEmailAttachments({
+      excel: true,
+      pdf: false,
+    });
+  };
+
+  const handleSendEmail = async (e) => {
+    e.preventDefault();
+    
+    if (!emailForm.email) {
+      toast.error('Ingresa un email');
+      return;
+    }
+    
+    if (!emailForm.subject) {
+      toast.error('Ingresa un asunto');
+      return;
+    }
+
+    if (!emailAttachments.excel && !emailAttachments.pdf) {
+      toast.error('Selecciona al menos un formato para adjuntar');
+      return;
+    }
+
+    try {
+      setSendingEmail(true);
+      
+      // Convertir texto plano a HTML (reemplazar saltos de línea con <br> y envolver en párrafos)
+      const htmlBody = emailForm.body
+        .split('\n')
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .map(line => `<p>${line}</p>`)
+        .join('');
+      
+      const emailData = {
+        ...emailForm,
+        body: htmlBody || emailForm.body, // Si htmlBody está vacío, usar el original
+        attachments: emailAttachments, // Enviar los formatos seleccionados
+      };
+      
+      const response = await api.post(`/orders/${emailModalOrder._id}/send-email`, emailData);
+      toast.success('Email enviado exitosamente');
+      
+      // Actualizar el pedido en la lista con el nuevo historial
+      if (response.data.order) {
+        setOrders(orders.map(o => o._id === response.data.order._id ? response.data.order : o));
+        setEmailModalOrder(response.data.order);
+      }
+      
+      // No cerramos el modal para que pueda ver el historial actualizado
+      // handleCloseEmailModal();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error al enviar email');
+      console.error(error);
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -465,7 +711,7 @@ const Orders = () => {
                   <span className="font-bold">OBSERVACIONES:</span> {observaciones || '(ninguna)'}
                 </p>
                 <p className="text-sm">
-                  <span className="font-bold">FECHA:</span> {fechaPlanilla}
+                  <span className="font-bold">FECHA:</span> {normalizeDate(fechaPlanilla) || fechaPlanilla}
                 </p>
               </div>
               {tipoPlanilla === 'A' && (
@@ -486,7 +732,7 @@ const Orders = () => {
     );
   };
 
-  if (loading) {
+  if (loading && isFirstLoad) {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
@@ -502,7 +748,7 @@ const Orders = () => {
       <Layout>
         <div className="max-w-4xl mx-auto space-y-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-800">Detalle del Pedido</h1>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Detalle del Pedido</h1>
             <div className="flex gap-2">
               <button
                 onClick={() => handleDownloadExcel(selectedOrder)}
@@ -525,21 +771,21 @@ const Orders = () => {
           <div className="card space-y-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-3">Información General</h3>
-                <div className="space-y-2 text-base">
+                <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-3">Información General</h3>
+                <div className="space-y-2 text-base text-gray-900 dark:text-gray-100">
                   <p><span className="font-medium">Número:</span> {selectedOrder.orderNumber}</p>
                   <p><span className="font-medium">Proveedor:</span> {selectedOrder.client?.name}</p>
                   <p><span className="font-medium">Vendedor:</span> {selectedOrder.vendedor?.nombre || selectedOrder.vendedor}</p>
                   <p><span className="font-medium">Planilla:</span> {selectedOrder.tipoPlanilla}</p>
                   <p><span className="font-medium">Fecha Planilla:</span> {selectedOrder.fechaPlanilla || new Date(selectedOrder.createdAt).toLocaleDateString('es-AR')}</p>
-                  <p className="text-sm text-gray-500"><span className="font-medium">Creado:</span> {new Date(selectedOrder.createdAt).toLocaleString('es-AR')}</p>
-                  <p className="text-sm text-gray-500"><span className="font-medium">Actualizado:</span> {new Date(selectedOrder.updatedAt).toLocaleString('es-AR')}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400"><span className="font-medium">Creado:</span> {new Date(selectedOrder.createdAt).toLocaleString('es-AR')}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400"><span className="font-medium">Actualizado:</span> {new Date(selectedOrder.updatedAt).toLocaleString('es-AR')}</p>
                 </div>
               </div>
               
               <div>
-                <h3 className="text-xl font-semibold text-gray-800 mb-3">Resumen</h3>
-                <div className="space-y-2 text-base">
+                <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-100 mb-3">Resumen</h3>
+                <div className="space-y-2 text-base text-gray-900 dark:text-gray-100">
                   <p><span className="font-medium">Total Items:</span> {selectedOrder.items?.length || 0}</p>
                   <p><span className="font-medium">Comisiones:</span> ${formatCurrency(selectedOrder.comisiones || 0)}</p>
                 </div>
@@ -547,22 +793,22 @@ const Orders = () => {
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Items</h3>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">Items</h3>
               <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                   <thead>
-                    <tr className="bg-gray-100">
-                      <th className="text-left p-2">Cliente</th>
-                      <th className="text-left p-2">Factura</th>
-                      <th className="text-right p-2">Importe</th>
-                      <th className="text-right p-2">Descuento</th>
-                      <th className="text-right p-2">Neto</th>
-                      <th className="text-right p-2">Efectivo</th>
+                    <tr className="bg-gray-100 dark:bg-gray-700">
+                      <th className="text-left p-2 dark:text-gray-100">Cliente</th>
+                      <th className="text-left p-2 dark:text-gray-100">Factura</th>
+                      <th className="text-right p-2 dark:text-gray-100">Importe</th>
+                      <th className="text-right p-2 dark:text-gray-100">Descuento</th>
+                      <th className="text-right p-2 dark:text-gray-100">Neto</th>
+                      <th className="text-right p-2 dark:text-gray-100">Efectivo</th>
                     </tr>
                   </thead>
                   <tbody>
                     {selectedOrder.items?.map((item, index) => (
-                      <tr key={index} className="border-b">
+                      <tr key={index} className="border-b dark:border-gray-700 text-gray-900 dark:text-gray-100">
                         <td className="p-3">{item.nombreCliente}</td>
                         <td className="p-3">{item.facturaNumero}</td>
                         <td className="text-right p-3">${formatCurrency(item.importe)}</td>
@@ -578,8 +824,8 @@ const Orders = () => {
 
             {selectedOrder.observaciones && (
               <div>
-                <h3 className="text-lg font-semibold text-gray-800 mb-2">Observaciones</h3>
-                <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">{selectedOrder.observaciones}</p>
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 mb-2">Observaciones</h3>
+                <p className="text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">{selectedOrder.observaciones}</p>
               </div>
             )}
           </div>
@@ -594,9 +840,28 @@ const Orders = () => {
       <Layout>
         <div className="space-y-4 max-w-6xl mx-auto">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-800">
-              {editingOrderId ? 'Editar Pedido' : 'Nuevo Pedido'}
-            </h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
+                {editingOrderId ? 'Editar Pedido' : 'Nuevo Pedido'}
+              </h1>
+              
+              {/* Indicador de estado de guardado */}
+              {!editingOrderId && (
+                <div className="flex items-center gap-2">
+                  {isSavedInDB ? (
+                    <span className="flex items-center gap-2 text-sm font-medium text-green-600 bg-green-50 px-3 py-1 rounded-full border border-green-200">
+                      <span className="w-2 h-2 bg-green-600 rounded-full animate-pulse"></span>
+                      Guardado en MongoDB
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2 text-sm font-medium text-orange-600 bg-orange-50 px-3 py-1 rounded-full border border-orange-200">
+                      <span className="w-2 h-2 bg-orange-600 rounded-full"></span>
+                      Borrador local
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
             <button
               onClick={() => {
                 resetForm();
@@ -796,9 +1061,11 @@ const Orders = () => {
                     <input
                       type="text"
                       value={currentItem.fecha}
-                      onChange={(e) => handleItemChange('fecha', e.target.value)}
+                      onChange={(e) => handleItemChange('fecha', formatDateInput(e.target.value))}
+                      onBlur={(e) => handleItemChange('fecha', normalizeDate(e.target.value))}
                       className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
                       placeholder="DD/MM/YYYY"
+                      maxLength="10"
                     />
                   </div>
 
@@ -946,9 +1213,11 @@ const Orders = () => {
                     <input
                       type="text"
                       value={fechaPlanilla}
-                      onChange={(e) => setFechaPlanilla(e.target.value)}
+                      onChange={(e) => setFechaPlanilla(formatDateInput(e.target.value))}
+                      onBlur={(e) => setFechaPlanilla(normalizeDate(e.target.value))}
                       className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base"
                       placeholder="DD/MM/YYYY"
+                      maxLength="10"
                     />
                   </div>
                 </div>
@@ -961,7 +1230,7 @@ const Orders = () => {
                 type="submit"
                 className="w-full bg-green-600 text-white py-4 px-6 rounded-xl font-bold text-lg hover:bg-green-700 transition-colors"
               >
-                {editingOrderId ? 'Actualizar Pedido' : 'Crear Pedido'}
+                {editingOrderId ? 'Actualizar Pedido' : 'Guardar Pedido'}
               </button>
             )}
           </form>
@@ -977,7 +1246,11 @@ const Orders = () => {
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-800">Pedidos</h1>
           <button
-            onClick={() => setViewMode('create')}
+            onClick={() => {
+              setIsSavedInDB(false);
+              setDraftLoaded(false);
+              setViewMode('create');
+            }}
             className="bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-700 transition-colors flex items-center gap-2 text-lg"
           >
             <FiPlus size={22} /> Nuevo Pedido
@@ -986,21 +1259,28 @@ const Orders = () => {
 
         {/* Filtros */}
         <div className="card">
-          <h3 className="text-xl font-semibold mb-4">Filtros</h3>
+          <h3 className="text-xl font-semibold mb-4 dark:text-gray-100">Filtros</h3>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Buscar por N°</label>
-              <input
-                type="text"
-                value={filters.search}
-                onChange={(e) => handleFilterChange('search', e.target.value)}
-                placeholder="ORD-000001"
-                className="input"
-              />
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Buscar</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="Número, cliente o fecha..."
+                  className="input pr-10"
+                />
+                {loading && !isFirstLoad && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <ClipLoader color="#3b82f6" size={20} />
+                  </div>
+                )}
+              </div>
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Proveedor</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cliente</label>
               <select
                 value={filters.client}
                 onChange={(e) => handleFilterChange('client', e.target.value)}
@@ -1016,7 +1296,7 @@ const Orders = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Vendedor</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Vendedor</label>
               <select
                 value={filters.vendedor}
                 onChange={(e) => handleFilterChange('vendedor', e.target.value)}
@@ -1032,7 +1312,7 @@ const Orders = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tipo Planilla</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tipo Planilla</label>
               <select
                 value={filters.tipoPlanilla}
                 onChange={(e) => handleFilterChange('tipoPlanilla', e.target.value)}
@@ -1047,11 +1327,11 @@ const Orders = () => {
 
           <div className="flex justify-between items-center mt-4">
             <div className="flex gap-4 items-center">
-              <label className="text-sm font-medium text-gray-700">Ordenar por:</label>
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Ordenar por:</label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-base"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
               >
                 <option value="createdAt">Fecha Creación</option>
                 <option value="updatedAt">Última Actualización</option>
@@ -1062,7 +1342,7 @@ const Orders = () => {
               <select
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-base"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
               >
                 <option value="desc">Más reciente</option>
                 <option value="asc">Más antiguo</option>
@@ -1072,10 +1352,11 @@ const Orders = () => {
             <button
               onClick={() => {
                 setFilters({ client: '', vendedor: '', tipoPlanilla: '', search: '' });
+                setSearchInput(''); // Limpiar también el input local
                 setSortBy('createdAt');
                 setSortOrder('desc');
               }}
-              className="text-primary-600 font-medium hover:text-primary-700"
+              className="text-primary-600 dark:text-primary-400 font-medium hover:text-primary-700 dark:hover:text-primary-300"
             >
               Limpiar filtros
             </button>
@@ -1084,16 +1365,20 @@ const Orders = () => {
 
         {/* Lista de pedidos */}
         <div className="space-y-4">
-          {loading ? (
+          {loading && isFirstLoad ? (
             <div className="flex items-center justify-center py-12">
               <ClipLoader color="#3b82f6" size={50} />
             </div>
           ) : orders.length === 0 ? (
             <div className="card text-center py-12">
-              <p className="text-gray-500 text-lg">No hay pedidos que coincidan con los filtros</p>
+              <p className="text-gray-500 dark:text-gray-400 text-lg">No hay pedidos que coincidan con los filtros</p>
               <button
-                onClick={() => setViewMode('create')}
-                className="mt-4 text-primary-600 font-semibold text-lg"
+                onClick={() => {
+                  setIsSavedInDB(false);
+                  setDraftLoaded(false);
+                  setViewMode('create');
+                }}
+                className="mt-4 text-primary-600 dark:text-primary-400 font-semibold text-lg"
               >
                 Crear un pedido
               </button>
@@ -1101,51 +1386,76 @@ const Orders = () => {
           ) : (
             <>
               {orders.map((order) => {
-                const fechaPlanilla = order.fechaPlanilla || new Date(order.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+                const fechaPlanilla = normalizeDate(order.fechaPlanilla) || new Date(order.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                
+                // Calcular total del pedido
+                const totalNeto = order.items?.reduce((sum, item) => {
+                  return sum + (parseFloat(item.neto) || 0);
+                }, 0) || 0;
+                
                 return (
                   <div key={order._id} className="card hover:shadow-lg transition-shadow">
                     <div className="flex justify-between items-start gap-4">
                       <div className="flex-1">
-                        <h3 className="font-bold text-2xl text-gray-800 mb-3">
+                        <h3 className="font-bold text-2xl text-gray-800 dark:text-gray-100 mb-3">
                           Planilla - {order.client?.name} - {fechaPlanilla}
                         </h3>
                         <div className="grid grid-cols-2 gap-2 text-sm">
-                          <p className="text-gray-600">
+                          <p className="text-gray-600 dark:text-gray-400">
                             <span className="font-bold text-base">Creado:</span> {new Date(order.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}
                           </p>
-                          <p className="text-gray-600">
+                          <p className="text-gray-600 dark:text-gray-400">
                             <span className="font-bold text-base">Editado:</span> {new Date(order.updatedAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}
                           </p>
                         </div>
-                        <p className="text-sm text-gray-500 mt-2">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                           <span className="font-medium">Número:</span> {order.orderNumber} | <span className="font-medium">Vendedor:</span> {order.vendedor?.nombre || order.vendedor} | <span className="font-medium">Items:</span> {order.items?.length || 0}
                         </p>
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                          <p className="text-lg font-bold text-primary-600 dark:text-primary-400">
+                            Total Neto: ${formatCurrency(totalNeto)}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex gap-3">
                         <button
                           onClick={() => handleDownloadExcel(order)}
-                          className="text-green-600 hover:text-green-800 p-2"
+                          className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 p-2"
                           title="Descargar Excel"
                         >
                           <FiDownload size={22} />
                         </button>
                         <button
+                          onClick={() => handleDownloadPDF(order)}
+                          className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-2"
+                          title="Descargar PDF"
+                        >
+                          <FiFileText size={22} />
+                        </button>
+                        <button
+                          onClick={() => handleOpenEmailModal(order)}
+                          className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 p-2"
+                          title="Enviar por Email"
+                        >
+                          <FiMail size={22} />
+                        </button>
+                        <button
                           onClick={() => handleViewOrder(order)}
-                          className="text-blue-600 hover:text-blue-800 p-2"
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 p-2"
                           title="Ver detalle"
                         >
                           <FiEye size={22} />
                         </button>
                         <button
                           onClick={() => handleEditOrder(order)}
-                          className="text-orange-600 hover:text-orange-800 p-2"
+                          className="text-orange-600 dark:text-orange-400 hover:text-orange-800 dark:hover:text-orange-300 p-2"
                           title="Editar"
                         >
                           <FiEdit2 size={22} />
                         </button>
                         <button
                           onClick={() => handleDelete(order._id)}
-                          className="text-red-600 hover:text-red-800 p-2"
+                          className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-2"
                           title="Eliminar"
                         >
                           <FiTrash2 size={22} />
@@ -1160,7 +1470,7 @@ const Orders = () => {
               {pagination.pages > 1 && (
                 <div className="card">
                   <div className="flex justify-between items-center">
-                    <div className="text-base text-gray-600">
+                    <div className="text-base text-gray-600 dark:text-gray-400">
                       Mostrando {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total} pedidos
                     </div>
                     
@@ -1168,7 +1478,7 @@ const Orders = () => {
                       <button
                         onClick={() => handlePageChange(pagination.page - 1)}
                         disabled={pagination.page === 1}
-                        className="px-4 py-2 border border-gray-300 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 text-base"
+                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                       >
                         Anterior
                       </button>
@@ -1181,7 +1491,7 @@ const Orders = () => {
                             className={`px-4 py-2 rounded-lg font-medium text-base ${
                               page === pagination.page
                                 ? 'bg-primary-600 text-white'
-                                : 'border border-gray-300 hover:bg-gray-50'
+                                : 'border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100'
                             }`}
                           >
                             {page}
@@ -1192,7 +1502,7 @@ const Orders = () => {
                       <button
                         onClick={() => handlePageChange(pagination.page + 1)}
                         disabled={pagination.page === pagination.pages}
-                        className="px-4 py-2 border border-gray-300 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 text-base"
+                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700 text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                       >
                         Siguiente
                       </button>
@@ -1204,6 +1514,188 @@ const Orders = () => {
           )}
         </div>
       </div>
+
+      {/* Modal de Email */}
+      {emailModalOpen && emailModalOrder && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onMouseDown={(e) => {
+            // Solo cerrar si el click empieza y termina en el overlay (no en el contenido)
+            if (e.target === e.currentTarget) {
+              handleCloseEmailModal();
+            }
+          }}
+        >
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex justify-between items-center rounded-t-2xl">
+              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                <FiMail className="text-primary-600 dark:text-primary-400" size={28} />
+                Enviar Planilla por Email
+              </h2>
+              <button
+                onClick={handleCloseEmailModal}
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+              >
+                <FiX size={28} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Información del pedido */}
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+                <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-2">Información del Pedido</h3>
+                <div className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                  <p><span className="font-medium">Número:</span> {emailModalOrder.orderNumber}</p>
+                  <p><span className="font-medium">Cliente:</span> {emailModalOrder.client?.name || emailModalOrder.client?.company || 'Cliente'}</p>
+                  <p><span className="font-medium">Tipo:</span> Planilla {emailModalOrder.tipoPlanilla}</p>
+                  <p><span className="font-medium">Fecha:</span> {emailModalOrder.fechaPlanilla || new Date(emailModalOrder.createdAt).toLocaleDateString('es-AR')}</p>
+                </div>
+              </div>
+
+              {/* Formulario de envío */}
+              <form onSubmit={handleSendEmail} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Email Destinatario *
+                  </label>
+                  <input
+                    type="email"
+                    value={emailForm.email}
+                    onChange={(e) => setEmailForm({ ...emailForm, email: e.target.value })}
+                    className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    placeholder="ejemplo@email.com"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Puedes cambiar el email solo para este envío
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Asunto del Email *
+                  </label>
+                  <input
+                    type="text"
+                    value={emailForm.subject}
+                    onChange={(e) => setEmailForm({ ...emailForm, subject: e.target.value })}
+                    className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    placeholder="Asunto del email"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Cuerpo del Email
+                  </label>
+                  <textarea
+                    value={emailForm.body}
+                    onChange={(e) => setEmailForm({ ...emailForm, body: e.target.value })}
+                    className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    rows="6"
+                    placeholder="Escribe el contenido del email..."
+                  />
+                </div>
+
+                {/* Selección de archivos adjuntos */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Archivos a adjuntar *
+                  </label>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800">
+                      <input
+                        type="checkbox"
+                        checked={emailAttachments.excel}
+                        onChange={(e) => setEmailAttachments({ ...emailAttachments, excel: e.target.checked })}
+                        className="w-5 h-5 text-primary-600 rounded focus:ring-2 focus:ring-primary-500"
+                      />
+                      <div className="flex-1">
+                        <span className="font-medium text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                          <FiDownload className="text-green-600 dark:text-green-400" />
+                          Excel (.xlsx)
+                        </span>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Planilla en formato Excel editable</p>
+                      </div>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800">
+                      <input
+                        type="checkbox"
+                        checked={emailAttachments.pdf}
+                        onChange={(e) => setEmailAttachments({ ...emailAttachments, pdf: e.target.checked })}
+                        className="w-5 h-5 text-primary-600 rounded focus:ring-2 focus:ring-primary-500"
+                      />
+                      <div className="flex-1">
+                        <span className="font-medium text-gray-800 dark:text-gray-100 flex items-center gap-2">
+                          <FiFileText className="text-red-600 dark:text-red-400" />
+                          PDF (.pdf)
+                        </span>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Documento PDF no editable</p>
+                      </div>
+                    </label>
+                  </div>
+                  {!emailAttachments.excel && !emailAttachments.pdf && (
+                    <p className="text-xs text-red-500 mt-2">Debes seleccionar al menos un formato</p>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={sendingEmail || (!emailAttachments.excel && !emailAttachments.pdf)}
+                  className="w-full bg-primary-600 text-white py-3 px-6 rounded-xl font-semibold hover:bg-primary-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {sendingEmail ? (
+                    <>
+                      <ClipLoader color="#ffffff" size={20} />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <FiMail size={20} />
+                      Enviar Email
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Historial de envíos */}
+              {emailModalOrder.emailHistory && emailModalOrder.emailHistory.length > 0 && (
+                <div className="border-t dark:border-gray-700 pt-6">
+                  <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-3 flex items-center gap-2">
+                    📜 Historial de Envíos ({emailModalOrder.emailHistory.length})
+                  </h3>
+                  <div className="space-y-3 max-h-60 overflow-y-auto">
+                    {emailModalOrder.emailHistory.map((history, index) => (
+                      <div key={index} className="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-3">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1">
+                            <p className="font-medium text-gray-800 dark:text-gray-100">
+                              📧 {history.sentTo}
+                            </p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                              <span className="font-medium">Asunto:</span> {history.subject}
+                            </p>
+                            {history.body && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
+                                {history.body.replace(/<[^>]*>/g, '')}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-right text-xs text-gray-500 dark:text-gray-400 ml-4">
+                            <p>{new Date(history.sentAt).toLocaleDateString('es-AR')}</p>
+                            <p>{new Date(history.sentAt).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

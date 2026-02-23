@@ -4,7 +4,7 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900 text-lg;
+    @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 text-lg transition-colors;
   }
 }
 
@@ -14,22 +14,30 @@
   }
   
   .btn-primary {
-    @apply bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800;
+    @apply bg-primary-600 dark:bg-primary-500 text-white hover:bg-primary-700 dark:hover:bg-primary-600 active:bg-primary-800 dark:active:bg-primary-700;
   }
   
   .btn-secondary {
-    @apply bg-gray-200 text-gray-800 hover:bg-gray-300 active:bg-gray-400;
+    @apply bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 active:bg-gray-400 dark:active:bg-gray-500;
   }
   
   .btn-danger {
-    @apply bg-red-600 text-white hover:bg-red-700 active:bg-red-800;
+    @apply bg-red-600 dark:bg-red-500 text-white hover:bg-red-700 dark:hover:bg-red-600 active:bg-red-800 dark:active:bg-red-700;
   }
   
   .input {
-    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-lg;
+    @apply w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent text-lg;
   }
   
   .card {
-    @apply bg-white rounded-lg shadow-md p-8;
+    @apply bg-white dark:bg-gray-800 rounded-xl shadow-md dark:shadow-lg p-6 md:p-8 border border-transparent dark:border-gray-700;
+  }
+  
+  .table-header {
+    @apply bg-gray-50 dark:bg-gray-700 text-xs font-medium text-gray-700 dark:text-gray-200 uppercase tracking-wider;
+  }
+  
+  .table-row {
+    @apply bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors;
   }
 }

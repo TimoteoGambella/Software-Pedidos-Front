@@ -146,7 +146,7 @@ const Clients = () => {
     <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-800">Clientes</h1>
+          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">Clientes</h1>
           <button
             onClick={() => setShowModal(true)}
             className="btn btn-primary flex items-center"
@@ -157,7 +157,7 @@ const Clients = () => {
 
         {/* Search Bar */}
         <div className="relative">
-          <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
             type="text"
             placeholder="Buscar clientes..."
@@ -172,34 +172,34 @@ const Clients = () => {
           <div className="overflow-x-auto">
             <table className="min-w-full">
               <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Nombre</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Email</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Teléfono</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Empresa</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Vendedor</th>
-                  <th className="text-left py-3 px-4 font-semibold text-gray-700">Acciones</th>
+                <tr className="border-b dark:border-gray-700">
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Nombre</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Email</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Teléfono</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Empresa</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Vendedor</th>
+                  <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredClients.map((client) => (
-                  <tr key={client._id} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4">{client.name}</td>
-                    <td className="py-3 px-4">{client.email || '-'}</td>
-                    <td className="py-3 px-4">{client.phone || '-'}</td>
-                    <td className="py-3 px-4">{client.company || '-'}</td>
-                    <td className="py-3 px-4">{client.vendedor?.nombre || client.vendedor || '-'}</td>
+                  <tr key={client._id} className="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <td className="py-3 px-4 text-gray-900 dark:text-gray-100">{client.name}</td>
+                    <td className="py-3 px-4 text-gray-900 dark:text-gray-100">{client.email || '-'}</td>
+                    <td className="py-3 px-4 text-gray-900 dark:text-gray-100">{client.phone || '-'}</td>
+                    <td className="py-3 px-4 text-gray-900 dark:text-gray-100">{client.company || '-'}</td>
+                    <td className="py-3 px-4 text-gray-900 dark:text-gray-100">{client.vendedor?.nombre || client.vendedor || '-'}</td>
                     <td className="py-3 px-4">
                       <div className="flex space-x-2">
                         <button
                           onClick={() => handleEdit(client)}
-                          className="text-blue-600 hover:text-blue-800"
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
                         >
                           <FiEdit2 size={20} />
                         </button>
                         <button
                           onClick={() => handleDelete(client._id)}
-                          className="text-red-600 hover:text-red-800"
+                          className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300"
                         >
                           <FiTrash2 size={20} />
                         </button>
@@ -214,15 +214,24 @@ const Clients = () => {
 
         {/* Modal */}
         {showModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <h2 className="text-2xl font-bold mb-4">
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onMouseDown={(e) => {
+              // Solo cerrar si el click empieza y termina en el overlay (no en el contenido)
+              if (e.target === e.currentTarget) {
+                setShowModal(false);
+                setEditingClient(null);
+              }
+            }}
+          >
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">
                 {editingClient ? 'Editar Cliente' : 'Nuevo Cliente'}
               </h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Nombre *</label>
                     <input
                       type="text"
                       name="name"
@@ -233,7 +242,7 @@ const Clients = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
                     <input
                       type="email"
                       name="email"
@@ -243,7 +252,7 @@ const Clients = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Teléfono</label>
                     <input
                       type="text"
                       name="phone"
@@ -253,7 +262,7 @@ const Clients = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Empresa</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Empresa</label>
                     <input
                       type="text"
                       name="company"
@@ -263,7 +272,7 @@ const Clients = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Vendedor *</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Vendedor *</label>
                     <select
                       name="vendedor"
                       value={formData.vendedor}

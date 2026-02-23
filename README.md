@@ -16,7 +16,7 @@ Frontend del sistema de pedidos construido con React + Vite, Tailwind CSS y otra
 ## 📋 Requisitos Previos
 
 - Node.js v16 o superior
-- Backend corriendo en `http://localhost:3001` (o la URL configurada)
+- Backend corriendo en `http://localhost:3003` (o la URL configurada)
 
 ## 🛠️ Instalación
 
@@ -43,7 +43,7 @@ Actualiza `VITE_API_URL` en los archivos .env:
 
 **`.env.development`**
 ```
-VITE_API_URL=http://localhost:3001/api
+VITE_API_URL=http://localhost:3003/api
 ```
 
 **`.env.production`**
