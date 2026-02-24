@@ -13,7 +13,11 @@ const PrivateRoute = ({ children }) => {
     );
   }
 
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  // Fallback: verificar localStorage por si el estado de React aún no se actualizó
+  const hasToken = !!localStorage.getItem('token');
+  const hasUser = !!localStorage.getItem('user');
+
+  return (isAuthenticated || (hasToken && hasUser)) ? children : <Navigate to="/login" />;
 };
 
 export default PrivateRoute;
