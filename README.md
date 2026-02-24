@@ -1,6 +1,6 @@
-# Sistema de Pedidos - Frontend
+# Sistema de Cobranzas - Frontend
 
-Frontend del sistema de pedidos construido con React + Vite, Tailwind CSS y otras tecnologías modernas.
+Frontend del sistema de cobranzas construido con React + Vite, Tailwind CSS y otras tecnologías modernas.
 
 ## 🚀 Características
 
@@ -89,8 +89,8 @@ Software-Pedidos-Front/
 │   │   ├── Login.jsx           # Página de login
 │   │   ├── Register.jsx        # Página de registro
 │   │   ├── Dashboard.jsx       # Dashboard principal
-│   │   ├── Clients.jsx         # Gestión de clientes
-│   │   ├── Orders.jsx          # Gestión de pedidos
+│   │   ├── Clients.jsx         # Gestión de proveedores
+│   │   ├── Orders.jsx          # Gestión de planillas de cobranza
 │   │   └── Profile.jsx         # Perfil de usuario
 │   ├── App.jsx                 # Componente principal
 │   ├── main.jsx                # Punto de entrada
@@ -149,20 +149,20 @@ El sistema de autenticación usa:
 
 ### Dashboard
 - Estadísticas en tarjetas
-- Tabla de pedidos recientes
+- Tabla de planillas recientes
 - Iconos con colores distintivos
 
-### Clientes
-- Lista de clientes con búsqueda
+### Proveedores
+- Lista de proveedores con búsqueda
 - Modal para crear/editar
 - Acciones de editar y eliminar
 
-### Pedidos
-- Lista completa de pedidos
-- Crear pedidos con múltiples items
-- Descargar Excel
+### Planillas de Cobranza
+- Lista completa de planillas
+- Crear planillas con múltiples items
+- Descargar Excel y PDF
 - Enviar por email
-- Estados visuales (pending, processing, completed, cancelled)
+- Diferentes tipos de planilla (A y B)
 
 ### Perfil
 - Actualizar nombre y email

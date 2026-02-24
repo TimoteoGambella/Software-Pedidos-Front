@@ -44,7 +44,7 @@ const Orders = () => {
   
   // Current item being edited
   const [currentItem, setCurrentItem] = useState({
-    nombreCliente: '',
+    nombreProveedor: '',
     facturaNumero: '',
     importe: '',
     descuento: '',
@@ -94,7 +94,7 @@ const Orders = () => {
   }, [searchInput]);
 
   useEffect(() => {
-    // Fetch clientes y vendedores solo una vez
+    // Fetch proveedores y vendedores solo una vez
     fetchClientsAndVendedores();
     // Set fecha actual por defecto
     const today = new Date().toLocaleDateString('es-AR');
@@ -141,7 +141,7 @@ const Orders = () => {
     }
   }, [viewMode, editingOrderId, vendedores, draftLoaded]);
 
-  // Auto-guardar en localStorage cuando se está creando un nuevo pedido
+  // Auto-guardar en localStorage cuando se está creando una nueva planilla de cobranza
   useEffect(() => {
     if (viewMode === 'create' && !editingOrderId && draftLoaded) {
       const draftOrder = {
@@ -203,7 +203,7 @@ const Orders = () => {
       setLoading(false);
       setIsFirstLoad(false);
     } catch (error) {
-      toast.error('Error al cargar pedidos');
+      toast.error('Error al cargar planillas de cobranza');
       setLoading(false);
       setIsFirstLoad(false);
     }
@@ -289,8 +289,8 @@ const Orders = () => {
   };
 
   const handleAddItem = () => {
-    if (!currentItem.nombreCliente.trim()) {
-      toast.warning('Por favor ingresa el nombre del cliente');
+    if (!currentItem.nombreProveedor.trim()) {
+      toast.warning('Por favor ingresa el nombre del proveedor');
       return;
     }
 
@@ -308,7 +308,7 @@ const Orders = () => {
     }
 
     setCurrentItem({
-      nombreCliente: '',
+      nombreProveedor: '',
       facturaNumero: '',
       importe: '',
       descuento: '',
@@ -335,7 +335,7 @@ const Orders = () => {
       if (editingItemIndex === index) {
         setEditingItemIndex(null);
         setCurrentItem({
-          nombreCliente: '',
+          nombreProveedor: '',
           facturaNumero: '',
           importe: '',
           descuento: '',
@@ -356,7 +356,7 @@ const Orders = () => {
     e.preventDefault();
     
     if (!selectedClient) {
-      toast.error('Selecciona un cliente');
+      toast.error('Selecciona un proveedor');
       return;
     }
     
@@ -371,24 +371,34 @@ const Orders = () => {
     }
 
     try {
+      // Convertir los campos numéricos de string a number
+      const processedItems = items.map(item => ({
+        ...item,
+        importe: parseFloat(item.importe) || 0,
+        descuento: parseFloat(item.descuento) || 0,
+        neto: parseFloat(item.neto) || 0,
+        importeCheque: parseFloat(item.importeCheque) || 0,
+        efectivo: parseFloat(item.efectivo) || 0,
+      }));
+
       const orderData = {
         client: selectedClient,
         vendedor,
         tipoPlanilla,
-        items,
+        items: processedItems,
         observaciones,
         comisiones: parseFloat(comisiones) || 0,
         fechaPlanilla: normalizeDate(fechaPlanilla),
       };
 
       if (editingOrderId) {
-        // Actualizar pedido existente
+        // Actualizar planilla de cobranza existente
         await api.put(`/orders/${editingOrderId}`, orderData);
-        toast.success('Pedido actualizado exitosamente');
+        toast.success('Planilla de cobranza actualizada exitosamente');
       } else {
-        // Crear nuevo pedido
+        // Crear nueva planilla de cobranza
         await api.post('/orders', orderData);
-        toast.success('Pedido creado exitosamente');
+        toast.success('Planilla de cobranza creada exitosamente');
         // Limpiar localStorage después de guardar exitosamente
         localStorage.removeItem('draftOrder');
       }
@@ -398,7 +408,7 @@ const Orders = () => {
       setViewMode('list');
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.message || `Error al ${editingOrderId ? 'actualizar' : 'crear'} pedido`);
+      toast.error(error.response?.data?.message || `Error al ${editingOrderId ? 'actualizar' : 'crear'} planilla de cobranza`);
     }
   };
 
@@ -417,7 +427,7 @@ const Orders = () => {
     setFechaPlanilla(today);
     setEditingItemIndex(null);
     setCurrentItem({
-      nombreCliente: '',
+      nombreProveedor: '',
       facturaNumero: '',
       importe: '',
       descuento: '',
@@ -436,13 +446,13 @@ const Orders = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('¿Estás seguro de eliminar este pedido?')) {
+    if (window.confirm('¿Estás seguro de eliminar esta planilla de cobranza?')) {
       try {
         await api.delete(`/orders/${id}`);
-        toast.success('Pedido eliminado');
+        toast.success('Planilla de cobranza eliminada');
         fetchData();
       } catch (error) {
-        toast.error('Error al eliminar pedido');
+        toast.error('Error al eliminar planilla de cobranza');
       }
     }
   };
@@ -469,7 +479,7 @@ const Orders = () => {
     setComisiones(order.comisiones?.toString() || '');
     setFechaPlanilla(order.fechaPlanilla || '');
     setViewMode('create'); // Usar el mismo formulario
-    toast.info('Editando pedido');
+    toast.info('Editando planilla de cobranza');
   };
 
   const handleDownloadExcel = async (order) => {
@@ -479,7 +489,7 @@ const Orders = () => {
       });
       
       // Generar nombre de archivo: Planilla - ClientName - Fecha
-      const clientName = order.client?.name || order.client?.company || 'Cliente';
+      const clientName = order.client?.name || order.client?.company || 'Proveedor';
       const fecha = order.fechaPlanilla || new Date(order.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
       const fileName = `Planilla - ${clientName} - ${fecha}.xlsx`;
       
@@ -504,7 +514,7 @@ const Orders = () => {
       });
       
       // Generar nombre de archivo: Planilla - ClientName - Fecha
-      const clientName = order.client?.name || order.client?.company || 'Cliente';
+      const clientName = order.client?.name || order.client?.company || 'Proveedor';
       const fecha = order.fechaPlanilla || new Date(order.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
       const fileName = `Planilla - ${clientName} - ${fecha}.pdf`;
       
@@ -524,13 +534,13 @@ const Orders = () => {
 
   const handleOpenEmailModal = (order) => {
     setEmailModalOrder(order);
-    const clientEmail = order.client?.email || '';
-    const clientName = order.client?.name || order.client?.company || 'Cliente';
+    const providerEmail = order.client?.email || '';
+    const providerName = order.client?.name || order.client?.company || 'Proveedor';
     const fecha = order.fechaPlanilla || new Date(order.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
     
     setEmailForm({
-      email: clientEmail,
-      subject: `Planilla de Cobranzas - ${clientName} - ${fecha}`,
+      email: providerEmail,
+      subject: `Planilla de Cobranzas - ${providerName} - ${fecha}`,
       body: `Estimado/a,\n\nAdjunto encontrará la planilla de cobranzas correspondiente.\n\nSaludos cordiales.`,
     });
     setEmailAttachments({
@@ -584,7 +594,8 @@ const Orders = () => {
         .join('');
       
       const emailData = {
-        ...emailForm,
+        to: emailForm.email, // El backend espera 'to' en lugar de 'email'
+        subject: emailForm.subject,
         body: htmlBody || emailForm.body, // Si htmlBody está vacío, usar el original
         attachments: emailAttachments, // Enviar los formatos seleccionados
       };
@@ -592,7 +603,7 @@ const Orders = () => {
       const response = await api.post(`/orders/${emailModalOrder._id}/send-email`, emailData);
       toast.success('Email enviado exitosamente');
       
-      // Actualizar el pedido en la lista con el nuevo historial
+      // Actualizar la planilla de cobranza en la lista con el nuevo historial
       if (response.data.order) {
         setOrders(orders.map(o => o._id === response.data.order._id ? response.data.order : o));
         setEmailModalOrder(response.data.order);
@@ -611,7 +622,7 @@ const Orders = () => {
   // Componente de Vista Previa del Excel
   const ExcelPreview = () => {
     const client = clients.find(c => c._id === selectedClient);
-    const clientName = client?.name || client?.company || 'Cliente';
+    const clientName = client?.name || client?.company || 'Proveedor';
     
     // Calcular totales
     const totalImporte = items.reduce((sum, item) => sum + (parseFloat(item.importe) || 0), 0);
@@ -652,7 +663,7 @@ const Orders = () => {
             <table className="w-full text-xs border-collapse">
               <thead>
                 <tr className="bg-gray-200">
-                  <th className="border border-gray-400 p-1 text-center">NOMBRE DEL CLIENTE</th>
+                  <th className="border border-gray-400 p-1 text-center">NOMBRE DEL PROVEEDOR</th>
                   <th className="border border-gray-400 p-1 text-center">FACTURA Nº</th>
                   <th className="border border-gray-400 p-1 text-center">IMPORTE</th>
                   <th className="border border-gray-400 p-1 text-center">DESCUENTO</th>
@@ -669,7 +680,7 @@ const Orders = () => {
                 {items.length > 0 ? (
                   items.map((item, index) => (
                     <tr key={index}>
-                      <td className="border border-gray-300 p-1">{item.nombreCliente}</td>
+                      <td className="border border-gray-300 p-1">{item.nombreProveedor}</td>
                       <td className="border border-gray-300 p-1 text-center">{item.facturaNumero}</td>
                       <td className="border border-gray-300 p-1 text-right">{formatCurrency(item.importe)}</td>
                       <td className="border border-gray-300 p-1 text-right">{formatCurrency(item.descuento)}</td>
@@ -742,13 +753,13 @@ const Orders = () => {
     );
   }
 
-  // Vista detalle de pedido
+  // Vista detalle de planilla de cobranza
   if (viewMode === 'view' && selectedOrder) {
     return (
       <Layout>
         <div className="max-w-4xl mx-auto space-y-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Detalle del Pedido</h1>
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Detalle de la Planilla de Cobranza</h1>
             <div className="flex gap-2">
               <button
                 onClick={() => handleDownloadExcel(selectedOrder)}
@@ -798,7 +809,7 @@ const Orders = () => {
                 <table className="min-w-full text-sm">
                   <thead>
                     <tr className="bg-gray-100 dark:bg-gray-700">
-                      <th className="text-left p-2 dark:text-gray-100">Cliente</th>
+                      <th className="text-left p-2 dark:text-gray-100">Proveedor</th>
                       <th className="text-left p-2 dark:text-gray-100">Factura</th>
                       <th className="text-right p-2 dark:text-gray-100">Importe</th>
                       <th className="text-right p-2 dark:text-gray-100">Descuento</th>
@@ -809,7 +820,7 @@ const Orders = () => {
                   <tbody>
                     {selectedOrder.items?.map((item, index) => (
                       <tr key={index} className="border-b dark:border-gray-700 text-gray-900 dark:text-gray-100">
-                        <td className="p-3">{item.nombreCliente}</td>
+                        <td className="p-3">{item.nombreProveedor}</td>
                         <td className="p-3">{item.facturaNumero}</td>
                         <td className="text-right p-3">${formatCurrency(item.importe)}</td>
                         <td className="text-right p-3">${formatCurrency(item.descuento)}</td>
@@ -834,7 +845,7 @@ const Orders = () => {
     );
   }
 
-  // Vista de creación de pedido
+  // Vista de creación de planilla de cobranza
   if (viewMode === 'create') {
     return (
       <Layout>
@@ -842,7 +853,7 @@ const Orders = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">
-                {editingOrderId ? 'Editar Pedido' : 'Nuevo Pedido'}
+                {editingOrderId ? 'Editar Planilla de Cobranza' : 'Nueva Planilla de Cobranza'}
               </h1>
               
               {/* Indicador de estado de guardado */}
@@ -876,10 +887,10 @@ const Orders = () => {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Paso 1: Información básica */}
             <div className="card">
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">1. Información del Pedido</h3>
+              <h3 className="text-lg font-semibold text-gray-800 mb-4">1. Información de la Planilla de Cobranza</h3>
               <div className="grid md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Proveedor (Cliente) *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Proveedor *</label>
                   <select
                     value={selectedClient}
                     onChange={(e) => handleClientChange(e.target.value)}
@@ -954,13 +965,13 @@ const Orders = () => {
                 
                 <div className="grid md:grid-cols-4 gap-3 mb-4">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Cliente *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Proveedor *</label>
                     <input
                       type="text"
-                      value={currentItem.nombreCliente}
-                      onChange={(e) => handleItemChange('nombreCliente', e.target.value)}
+                      value={currentItem.nombreProveedor}
+                      onChange={(e) => handleItemChange('nombreProveedor', e.target.value)}
                       className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-                      placeholder="Nombre del cliente"
+                      placeholder="Nombre del proveedor"
                     />
                   </div>
 
@@ -1104,7 +1115,7 @@ const Orders = () => {
                       onClick={() => {
                         setEditingItemIndex(null);
                         setCurrentItem({
-                          nombreCliente: '',
+                          nombreProveedor: '',
                           facturaNumero: '',
                           importe: '',
                           descuento: '',
@@ -1132,7 +1143,7 @@ const Orders = () => {
                       <table className="min-w-full text-sm">
                         <thead>
                           <tr className="bg-gray-100">
-                            <th className="text-left p-2">Cliente</th>
+                            <th className="text-left p-2">Proveedor</th>
                             <th className="text-left p-2">Factura</th>
                             <th className="text-right p-2">Importe</th>
                             <th className="text-right p-2">Desc.</th>
@@ -1144,7 +1155,7 @@ const Orders = () => {
                         <tbody>
                           {items.map((item, index) => (
                             <tr key={index} className={`border-b hover:bg-gray-50 ${editingItemIndex === index ? 'bg-blue-50' : ''}`}>
-                              <td className="p-3">{item.nombreCliente}</td>
+                              <td className="p-3">{item.nombreProveedor}</td>
                               <td className="p-3">{item.facturaNumero}</td>
                               <td className="text-right p-3">${formatCurrency(item.importe)}</td>
                               <td className="text-right p-3">${formatCurrency(item.descuento)}</td>
@@ -1230,7 +1241,7 @@ const Orders = () => {
                 type="submit"
                 className="w-full bg-green-600 text-white py-4 px-6 rounded-xl font-bold text-lg hover:bg-green-700 transition-colors"
               >
-                {editingOrderId ? 'Actualizar Pedido' : 'Guardar Pedido'}
+                {editingOrderId ? 'Actualizar Planilla' : 'Guardar Planilla'}
               </button>
             )}
           </form>
@@ -1239,12 +1250,12 @@ const Orders = () => {
     );
   }
 
-  // Vista de lista de pedidos
+  // Vista de lista de planillas de cobranza
   return (
     <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-800">Pedidos</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Planillas de Cobranza</h1>
           <button
             onClick={() => {
               setIsSavedInDB(false);
@@ -1253,7 +1264,7 @@ const Orders = () => {
             }}
             className="bg-primary-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-primary-700 transition-colors flex items-center gap-2 text-lg"
           >
-            <FiPlus size={22} /> Nuevo Pedido
+            <FiPlus size={22} /> Nueva Planilla de Cobranza
           </button>
         </div>
 
@@ -1268,7 +1279,7 @@ const Orders = () => {
                   type="text"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Número, cliente o fecha..."
+                  placeholder="Número, proveedor o fecha..."
                   className="input pr-10"
                 />
                 {loading && !isFirstLoad && (
@@ -1280,7 +1291,7 @@ const Orders = () => {
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cliente</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Proveedor</label>
               <select
                 value={filters.client}
                 onChange={(e) => handleFilterChange('client', e.target.value)}
@@ -1363,7 +1374,7 @@ const Orders = () => {
           </div>
         </div>
 
-        {/* Lista de pedidos */}
+        {/* Lista de planillas de cobranza */}
         <div className="space-y-4">
           {loading && isFirstLoad ? (
             <div className="flex items-center justify-center py-12">
@@ -1371,7 +1382,7 @@ const Orders = () => {
             </div>
           ) : orders.length === 0 ? (
             <div className="card text-center py-12">
-              <p className="text-gray-500 dark:text-gray-400 text-lg">No hay pedidos que coincidan con los filtros</p>
+              <p className="text-gray-500 dark:text-gray-400 text-lg">No hay planillas de cobranza que coincidan con los filtros</p>
               <button
                 onClick={() => {
                   setIsSavedInDB(false);
@@ -1380,7 +1391,7 @@ const Orders = () => {
                 }}
                 className="mt-4 text-primary-600 dark:text-primary-400 font-semibold text-lg"
               >
-                Crear un pedido
+                Crear una planilla de cobranza
               </button>
             </div>
           ) : (
@@ -1388,7 +1399,7 @@ const Orders = () => {
               {orders.map((order) => {
                 const fechaPlanilla = normalizeDate(order.fechaPlanilla) || new Date(order.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 
-                // Calcular total del pedido
+                // Calcular total de la planilla
                 const totalNeto = order.items?.reduce((sum, item) => {
                   return sum + (parseFloat(item.neto) || 0);
                 }, 0) || 0;
@@ -1471,7 +1482,7 @@ const Orders = () => {
                 <div className="card">
                   <div className="flex justify-between items-center">
                     <div className="text-base text-gray-600 dark:text-gray-400">
-                      Mostrando {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total} pedidos
+                      Mostrando {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total} planillas de cobranza
                     </div>
                     
                     <div className="flex gap-2">
@@ -1541,12 +1552,12 @@ const Orders = () => {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Información del pedido */}
+              {/* Información de la planilla de cobranza */}
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
-                <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-2">Información del Pedido</h3>
+                <h3 className="font-semibold text-gray-800 dark:text-gray-100 mb-2">Información de la Planilla de Cobranza</h3>
                 <div className="text-sm text-gray-700 dark:text-gray-300 space-y-1">
                   <p><span className="font-medium">Número:</span> {emailModalOrder.orderNumber}</p>
-                  <p><span className="font-medium">Cliente:</span> {emailModalOrder.client?.name || emailModalOrder.client?.company || 'Cliente'}</p>
+                  <p><span className="font-medium">Proveedor:</span> {emailModalOrder.client?.name || emailModalOrder.client?.company || 'Proveedor'}</p>
                   <p><span className="font-medium">Tipo:</span> Planilla {emailModalOrder.tipoPlanilla}</p>
                   <p><span className="font-medium">Fecha:</span> {emailModalOrder.fechaPlanilla || new Date(emailModalOrder.createdAt).toLocaleDateString('es-AR')}</p>
                 </div>

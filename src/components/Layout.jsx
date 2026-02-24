@@ -30,8 +30,8 @@ const Layout = ({ children }) => {
 
   const menuItems = [
     { path: '/', icon: FiHome, label: 'Inicio' },
-    { path: '/clients', icon: FiUsers, label: 'Clientes' },
-    { path: '/orders', icon: FiShoppingCart, label: 'Pedidos' },
+    { path: '/clients', icon: FiUsers, label: 'Proveedores' },
+    { path: '/orders', icon: FiShoppingCart, label: 'Planillas de Cobranza' },
     { path: '/sales-by-seller', icon: FiTrendingUp, label: 'Ventas por Vendedor' },
     { path: '/analysis', icon: FiBarChart2, label: 'Panel de Análisis' },
     { path: '/profile', icon: FiUser, label: 'Perfil' },
@@ -49,7 +49,7 @@ const Layout = ({ children }) => {
             <FiMenu size={24} />
           </button>
           
-          <h1 className="text-lg font-bold text-primary-600 dark:text-primary-400">Sistema Pedidos</h1>
+          <h1 className="text-lg font-bold text-primary-600 dark:text-primary-400">Sistema de Cobranzas</h1>
           
           <div className="flex items-center space-x-2">
             <button
@@ -76,7 +76,7 @@ const Layout = ({ children }) => {
         lg:translate-x-0
       `}>
         <div className="flex items-center justify-between h-16 px-6 bg-primary-600 dark:bg-primary-700">
-          <h1 className="text-xl font-bold text-white">Sistema Pedidos</h1>
+          <h1 className="text-xl font-bold text-white">Sistema de Cobranzas</h1>
           <button
             onClick={() => setSidebarOpen(false)}
             className="lg:hidden text-white"

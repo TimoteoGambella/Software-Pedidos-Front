@@ -99,7 +99,7 @@ const SalesBySeller = () => {
   // Datos para gráfico de barras (Número de pedidos)
   const barDataOrders = sellers.map(seller => ({
     name: seller.name.length > 15 ? seller.name.substring(0, 15) + '...' : seller.name,
-    pedidos: seller.orderCount
+    planillas: seller.orderCount
   }));
 
   return (
@@ -175,7 +175,7 @@ const SalesBySeller = () => {
           <div className="card">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-500 dark:text-gray-400 text-sm">Total Pedidos</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Total Planillas</p>
                 <p className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-1">{stats.summary?.totalOrders || 0}</p>
               </div>
               <div className="bg-green-500 p-3 rounded-lg">
@@ -245,7 +245,7 @@ const SalesBySeller = () => {
 
           {/* Gráfico de Barras - Número de Pedidos */}
           <div className="card">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Cantidad de Pedidos</h2>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Cantidad de Planillas</h2>
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={barDataOrders} margin={{ top: 20, right: 30, left: 20, bottom: 70 }}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -259,7 +259,7 @@ const SalesBySeller = () => {
                 />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="pedidos" fill="#10b981" name="Pedidos" />
+                <Bar dataKey="planillas" fill="#10b981" name="Planillas" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -273,7 +273,7 @@ const SalesBySeller = () => {
               <thead>
                 <tr className="border-b dark:border-gray-700">
                   <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Vendedor</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Pedidos</th>
+                  <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Planillas</th>
                   <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Total Neto</th>
                   <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Total Importe</th>
                   <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Descuento</th>

@@ -165,13 +165,13 @@ const Dashboard = () => {
 
   const statCards = [
     {
-      title: 'Total Pedidos',
+      title: 'Total Planillas',
       value: stats.general.totalOrders,
       icon: FiShoppingCart,
       color: 'bg-blue-500',
     },
     {
-      title: 'Total Clientes',
+      title: 'Total Proveedores',
       value: stats.general.totalClients,
       icon: FiUsers,
       color: 'bg-green-500',
@@ -196,13 +196,13 @@ const Dashboard = () => {
     value: count
   }));
 
-  // Preparar datos para el gráfico de barras (top clientes por órdenes)
+  // Preparar datos para el gráfico de barras (top proveedores por órdenes)
   const barData = stats.topClientsByOrders.slice(0, 10).map(item => ({
     name: item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name,
-    pedidos: item.count
+    planillas: item.count
   }));
 
-  // Preparar datos para el gráfico de barras (top clientes por revenue)
+  // Preparar datos para el gráfico de barras (top proveedores por revenue)
   const revenueBarData = stats.topClientsByRevenue.slice(0, 10).map(item => ({
     name: item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name,
     revenue: item.revenue
@@ -211,7 +211,7 @@ const Dashboard = () => {
   // Preparar datos para el gráfico de línea (órdenes por día)
   const lineData = stats.dailyStats.slice(-30).map(item => ({
     fecha: item.date,
-    pedidos: item.count,
+    planillas: item.count,
     revenue: item.revenue
   }));
 
@@ -281,7 +281,7 @@ const Dashboard = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Cliente
+                  Proveedor
                 </label>
                 <select
                   value={filters.client}
@@ -407,9 +407,9 @@ const Dashboard = () => {
             </ResponsiveContainer>
           </div>
 
-          {/* Gráfico de Barras - Top Clientes por Pedidos */}
+          {/* Gráfico de Barras - Top Proveedores por Pedidos */}
           <div className="card">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Top Clientes por Cantidad de Pedidos</h2>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Top Proveedores por Cantidad de Planillas</h2>
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={barData} margin={{ top: 20, right: 30, left: 20, bottom: 70 }}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -421,14 +421,14 @@ const Dashboard = () => {
                 />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="pedidos" fill="#3b82f6" />
+                <Bar dataKey="planillas" fill="#3b82f6" />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Gráfico de Barras - Top Clientes por Revenue */}
+          {/* Gráfico de Barras - Top Proveedores por Revenue */}
           <div className="card">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Top Clientes por Facturación</h2>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Top Proveedores por Facturación</h2>
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={revenueBarData} margin={{ top: 20, right: 30, left: 20, bottom: 70 }}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -447,7 +447,7 @@ const Dashboard = () => {
 
           {/* Gráfico de Línea - Tendencia de Pedidos */}
           <div className="card">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Tendencia de Pedidos (Últimos 30 Días)</h2>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Tendencia de Planillas (Últimos 30 Días)</h2>
             <ResponsiveContainer width="100%" height={350}>
               <LineChart data={lineData} margin={{ top: 20, right: 30, left: 20, bottom: 70 }}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -460,7 +460,7 @@ const Dashboard = () => {
                 <YAxis />
                 <Tooltip />
                 <Legend />
-                <Line type="monotone" dataKey="pedidos" stroke="#8b5cf6" name="Pedidos" />
+                <Line type="monotone" dataKey="planillas" stroke="#8b5cf6" name="Planillas" />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -477,7 +477,7 @@ const Dashboard = () => {
                 <thead>
                   <tr className="border-b dark:border-gray-700">
                     <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Vendedor</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Pedidos</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Planillas</th>
                     <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Facturación</th>
                   </tr>
                 </thead>

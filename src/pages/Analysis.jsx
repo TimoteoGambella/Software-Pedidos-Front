@@ -90,14 +90,14 @@ const Analysis = () => {
   // Datos para gráfico de línea (tendencia mensual)
   const lineData = months.map(month => ({
     mes: month.monthName,
-    pedidos: month.orders || 0,
+    planillas: month.orders || 0,
     neto: month.neto || 0
   }));
 
-  // Datos para top clientes
+  // Datos para top proveedores
   const topClientsData = topClients.map(client => ({
     name: client.name && client.name.length > 20 ? client.name.substring(0, 20) + '...' : (client.name || 'Sin nombre'),
-    pedidos: client.orderCount || 0
+    planillas: client.orderCount || 0
   }));
 
   // Datos para top productos (pie chart)
@@ -157,7 +157,7 @@ const Analysis = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Top N (Clientes/Productos)
+                  Top N (Proveedores/Productos)
                 </label>
                 <select
                   value={filters.limit}
@@ -179,7 +179,7 @@ const Analysis = () => {
           <div className="card">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-500 dark:text-gray-400 text-sm">Total Pedidos {filters.year}</p>
+                <p className="text-gray-500 dark:text-gray-400 text-sm">Total Planillas {filters.year}</p>
                 <p className="text-2xl font-bold text-gray-800 dark:text-gray-100 mt-1">{timeAnalysis.summary?.totalOrders || 0}</p>
               </div>
               <div className="bg-blue-500 p-3 rounded-lg">
@@ -223,11 +223,11 @@ const Analysis = () => {
               <Tooltip 
                 formatter={(value, name) => {
                   if (name === 'neto') return [`$${formatCurrency(value)}`, 'Total Neto'];
-                  return [value, 'Pedidos'];
+                  return [value, 'Planillas'];
                 }}
               />
               <Legend />
-              <Line yAxisId="left" type="monotone" dataKey="pedidos" stroke="#3b82f6" name="Pedidos" strokeWidth={2} />
+              <Line yAxisId="left" type="monotone" dataKey="planillas" stroke="#3b82f6" name="Planillas" strokeWidth={2} />
               <Line yAxisId="right" type="monotone" dataKey="neto" stroke="#10b981" name="Total Neto" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
@@ -235,9 +235,9 @@ const Analysis = () => {
 
         {/* Gráficos de Trending */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Top Clientes por Pedidos */}
+          {/* Top Proveedores por Pedidos */}
           <div className="card">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Top Clientes por Pedidos</h2>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Top Proveedores por Planillas</h2>
             <ResponsiveContainer width="100%" height={350}>
               <BarChart data={topClientsData} margin={{ top: 20, right: 30, left: 20, bottom: 90 }}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -251,7 +251,7 @@ const Analysis = () => {
                 />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="pedidos" fill="#8b5cf6" name="Pedidos" />
+                <Bar dataKey="planillas" fill="#8b5cf6" name="Planillas" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -289,16 +289,16 @@ const Analysis = () => {
 
         {/* Tablas Detalladas */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Tabla Top Clientes */}
+          {/* Tabla Top Proveedores */}
           <div className="card">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Detalle Top Clientes</h2>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Detalle Top Proveedores</h2>
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead>
                   <tr className="border-b dark:border-gray-700">
                     <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">#</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Cliente</th>
-                    <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Pedidos</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Proveedor</th>
+                    <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Planillas</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -352,9 +352,9 @@ const Analysis = () => {
               <thead>
                 <tr className="border-b dark:border-gray-700">
                   <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Mes</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Pedidos</th>
+                  <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Planillas</th>
                   <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Total Neto</th>
-                  <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Promedio/Pedido</th>
+                  <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Promedio/Planilla</th>
                 </tr>
               </thead>
               <tbody>

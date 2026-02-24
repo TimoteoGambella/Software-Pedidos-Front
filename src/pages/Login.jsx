@@ -44,7 +44,7 @@ const Login = () => {
           <div className="bg-primary-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
             <FiLock className="text-primary-600 text-4xl" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Sistema de Pedidos</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Sistema de Cobranzas</h1>
           <p className="text-gray-600 text-sm">Inicia sesión en tu cuenta</p>
         </div>
 

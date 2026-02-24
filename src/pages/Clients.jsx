@@ -53,7 +53,7 @@ const Clients = () => {
       const { data } = await api.get('/clients');
       setClients(data);
     } catch (error) {
-      toast.error('Error al cargar clientes');
+      toast.error('Error al cargar proveedores');
     }
   };
 
@@ -78,15 +78,15 @@ const Clients = () => {
     try {
       if (editingClient) {
         await api.put(`/clients/${editingClient._id}`, formData);
-        toast.success('Cliente actualizado');
+        toast.success('Proveedor actualizado');
       } else {
         await api.post('/clients', formData);
-        toast.success('Cliente creado');
+        toast.success('Proveedor creado');
       }
       fetchClients();
       closeModal();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Error al guardar cliente');
+      toast.error(error.response?.data?.message || 'Error al guardar proveedor');
     }
   };
 
@@ -100,13 +100,13 @@ const Clients = () => {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('¿Estás seguro de eliminar este cliente?')) {
+    if (window.confirm('¿Estás seguro de eliminar este proveedor?')) {
       try {
         await api.delete(`/clients/${id}`);
-        toast.success('Cliente eliminado');
+        toast.success('Proveedor eliminado');
         fetchClients();
       } catch (error) {
-        toast.error('Error al eliminar cliente');
+        toast.error('Error al eliminar proveedor');
       }
     }
   };
@@ -160,7 +160,7 @@ const Clients = () => {
           <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" />
           <input
             type="text"
-            placeholder="Buscar clientes..."
+            placeholder="Buscar proveedores..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="input pl-10"
@@ -226,7 +226,7 @@ const Clients = () => {
           >
             <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
               <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">
-                {editingClient ? 'Editar Cliente' : 'Nuevo Cliente'}
+                {editingClient ? 'Editar Proveedor' : 'Nuevo Proveedor'}
               </h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
