@@ -31,6 +31,7 @@ const Layout = ({ children }) => {
   const menuItems = [
     { path: '/', icon: FiHome, label: 'Inicio' },
     { path: '/clients', icon: FiUsers, label: 'Proveedores' },
+    { path: '/clientes', icon: FiUsers, label: 'Clientes' },
     { path: '/orders', icon: FiShoppingCart, label: 'Planillas de Cobranza' },
     { path: '/sales-by-seller', icon: FiTrendingUp, label: 'Ventas por Vendedor' },
     { path: '/analysis', icon: FiBarChart2, label: 'Panel de Análisis' },
@@ -104,7 +105,15 @@ const Layout = ({ children }) => {
                   flex items-center px-6 py-4 text-gray-700 dark:text-gray-300 hover:bg-primary-50 dark:hover:bg-gray-700 hover:text-primary-600 dark:hover:text-primary-400 transition-colors
                   ${isActive ? 'bg-primary-50 dark:bg-gray-700 text-primary-600 dark:text-primary-400 border-r-4 border-primary-600 dark:border-primary-400' : ''}
                 `}
-                onClick={() => setSidebarOpen(false)}
+                onClick={(e) => {
+                  setSidebarOpen(false);
+                  // Navegar incluso si ya estamos en la misma ruta
+                  if (location.pathname === item.path) {
+                    e.preventDefault();
+                    navigate(item.path, { replace: true });
+                    window.scrollTo(0, 0);
+                  }
+                }}
               >
                 <Icon className="mr-3" size={22} />
                 <span className="font-medium">{item.label}</span>

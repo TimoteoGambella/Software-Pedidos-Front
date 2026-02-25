@@ -9,6 +9,7 @@ import PrivateRoute from './components/PrivateRoute';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Clients from './pages/Clients';
+import Clientes from './pages/Clientes';
 import Orders from './pages/Orders';
 import Profile from './pages/Profile';
 import SalesBySeller from './pages/SalesBySeller';
@@ -25,6 +26,7 @@ function App() {
               
               <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
               <Route path="/clients" element={<PrivateRoute><Clients /></PrivateRoute>} />
+              <Route path="/clientes" element={<PrivateRoute><Clientes /></PrivateRoute>} />
               <Route path="/orders" element={<PrivateRoute><Orders /></PrivateRoute>} />
               <Route path="/sales-by-seller" element={<PrivateRoute><SalesBySeller /></PrivateRoute>} />
               <Route path="/analysis" element={<PrivateRoute><Analysis /></PrivateRoute>} />

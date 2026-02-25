@@ -10,6 +10,7 @@ const Orders = () => {
   const [orders, setOrders] = useState([]);
   const [clients, setClients] = useState([]);
   const [vendedores, setVendedores] = useState([]);
+  const [clientesData, setClientesData] = useState([]); // Clientes del nuevo modelo
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState('list'); // 'list', 'create', 'view', 'edit'
   const [selectedOrder, setSelectedOrder] = useState(null);
@@ -44,7 +45,7 @@ const Orders = () => {
   
   // Current item being edited
   const [currentItem, setCurrentItem] = useState({
-    nombreProveedor: '',
+    nombreCliente: '',
     facturaNumero: '',
     importe: '',
     descuento: '',
@@ -161,12 +162,19 @@ const Orders = () => {
 
   const fetchClientsAndVendedores = async () => {
     try {
-      const [clientsRes, vendedoresRes] = await Promise.all([
+      const [clientsRes, vendedoresRes, clientesRes] = await Promise.all([
         api.get('/clients'),
         api.get('/vendedores'),
+        api.get('/clientes'),
       ]);
       setClients(clientsRes.data);
       setVendedores(vendedoresRes.data);
+      
+      // Ordenar clientes alfabéticamente por nombre
+      const sortedClientes = (clientesRes.data.clientes || []).sort((a, b) => 
+        a.nombre.localeCompare(b.nombre, 'es-AR')
+      );
+      setClientesData(sortedClientes);
       
       // Set primer vendedor por defecto si existe
       if (vendedoresRes.data.length > 0) {
@@ -289,8 +297,8 @@ const Orders = () => {
   };
 
   const handleAddItem = () => {
-    if (!currentItem.nombreProveedor.trim()) {
-      toast.warning('Por favor ingresa el nombre del proveedor');
+    if (!currentItem.nombreCliente.trim()) {
+      toast.warning('Por favor ingresa el nombre del cliente');
       return;
     }
 
@@ -335,7 +343,7 @@ const Orders = () => {
       if (editingItemIndex === index) {
         setEditingItemIndex(null);
         setCurrentItem({
-          nombreProveedor: '',
+          nombreCliente: '',
           facturaNumero: '',
           importe: '',
           descuento: '',
@@ -609,8 +617,8 @@ const Orders = () => {
         setEmailModalOrder(response.data.order);
       }
       
-      // No cerramos el modal para que pueda ver el historial actualizado
-      // handleCloseEmailModal();
+      // Cerrar el modal después de enviar exitosamente
+      handleCloseEmailModal();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error al enviar email');
       console.error(error);
@@ -663,7 +671,7 @@ const Orders = () => {
             <table className="w-full text-xs border-collapse">
               <thead>
                 <tr className="bg-gray-200">
-                  <th className="border border-gray-400 p-1 text-center">NOMBRE DEL PROVEEDOR</th>
+                  <th className="border border-gray-400 p-1 text-center">NOMBRE DEL CLIENTE</th>
                   <th className="border border-gray-400 p-1 text-center">FACTURA Nº</th>
                   <th className="border border-gray-400 p-1 text-center">IMPORTE</th>
                   <th className="border border-gray-400 p-1 text-center">DESCUENTO</th>
@@ -680,7 +688,7 @@ const Orders = () => {
                 {items.length > 0 ? (
                   items.map((item, index) => (
                     <tr key={index}>
-                      <td className="border border-gray-300 p-1">{item.nombreProveedor}</td>
+                      <td className="border border-gray-300 p-1">{item.nombreCliente}</td>
                       <td className="border border-gray-300 p-1 text-center">{item.facturaNumero}</td>
                       <td className="border border-gray-300 p-1 text-right">{formatCurrency(item.importe)}</td>
                       <td className="border border-gray-300 p-1 text-right">{formatCurrency(item.descuento)}</td>
@@ -809,7 +817,7 @@ const Orders = () => {
                 <table className="min-w-full text-sm">
                   <thead>
                     <tr className="bg-gray-100 dark:bg-gray-700">
-                      <th className="text-left p-2 dark:text-gray-100">Proveedor</th>
+                      <th className="text-left p-2 dark:text-gray-100">Cliente</th>
                       <th className="text-left p-2 dark:text-gray-100">Factura</th>
                       <th className="text-right p-2 dark:text-gray-100">Importe</th>
                       <th className="text-right p-2 dark:text-gray-100">Descuento</th>
@@ -820,7 +828,7 @@ const Orders = () => {
                   <tbody>
                     {selectedOrder.items?.map((item, index) => (
                       <tr key={index} className="border-b dark:border-gray-700 text-gray-900 dark:text-gray-100">
-                        <td className="p-3">{item.nombreProveedor}</td>
+                        <td className="p-3">{item.nombreCliente}</td>
                         <td className="p-3">{item.facturaNumero}</td>
                         <td className="text-right p-3">${formatCurrency(item.importe)}</td>
                         <td className="text-right p-3">${formatCurrency(item.descuento)}</td>
@@ -965,14 +973,20 @@ const Orders = () => {
                 
                 <div className="grid md:grid-cols-4 gap-3 mb-4">
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Proveedor *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre del Cliente *</label>
                     <input
                       type="text"
-                      value={currentItem.nombreProveedor}
-                      onChange={(e) => handleItemChange('nombreProveedor', e.target.value)}
+                      list="clientes-list"
+                      value={currentItem.nombreCliente}
+                      onChange={(e) => handleItemChange('nombreCliente', e.target.value)}
                       className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-                      placeholder="Nombre del proveedor"
+                      placeholder="Seleccione o escriba el nombre del cliente"
                     />
+                    <datalist id="clientes-list">
+                      {clientesData.map((cliente) => (
+                        <option key={cliente._id} value={cliente.nombre} />
+                      ))}
+                    </datalist>
                   </div>
 
                   <div>
@@ -1115,7 +1129,7 @@ const Orders = () => {
                       onClick={() => {
                         setEditingItemIndex(null);
                         setCurrentItem({
-                          nombreProveedor: '',
+                          nombreCliente: '',
                           facturaNumero: '',
                           importe: '',
                           descuento: '',
@@ -1143,7 +1157,7 @@ const Orders = () => {
                       <table className="min-w-full text-sm">
                         <thead>
                           <tr className="bg-gray-100">
-                            <th className="text-left p-2">Proveedor</th>
+                            <th className="text-left p-2">Cliente</th>
                             <th className="text-left p-2">Factura</th>
                             <th className="text-right p-2">Importe</th>
                             <th className="text-right p-2">Desc.</th>
@@ -1155,7 +1169,7 @@ const Orders = () => {
                         <tbody>
                           {items.map((item, index) => (
                             <tr key={index} className={`border-b hover:bg-gray-50 ${editingItemIndex === index ? 'bg-blue-50' : ''}`}>
-                              <td className="p-3">{item.nombreProveedor}</td>
+                              <td className="p-3">{item.nombreCliente}</td>
                               <td className="p-3">{item.facturaNumero}</td>
                               <td className="text-right p-3">${formatCurrency(item.importe)}</td>
                               <td className="text-right p-3">${formatCurrency(item.descuento)}</td>

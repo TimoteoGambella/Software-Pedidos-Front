@@ -4,7 +4,7 @@ import api from '../config/api';
 import { toast } from 'react-toastify';
 import { FiUsers, FiDollarSign, FiTrendingUp, FiFilter, FiX } from 'react-icons/fi';
 import { ClipLoader } from 'react-spinners';
-import { formatCurrency } from '../utils/formatters';
+import { formatCurrency, formatYAxis, formatYAxisCurrency, formatTooltipCurrency, formatTooltipNumber } from '../utils/formatters';
 import {
   ResponsiveContainer,
   BarChart,
@@ -207,13 +207,12 @@ const SalesBySeller = () => {
                 <XAxis 
                   dataKey="name" 
                   interval={0}
-                  angle={-45}
                   textAnchor="end"
                   tick={{ fontSize: 12 }}
                   height={100}
                 />
-                <YAxis />
-                <Tooltip formatter={(value) => `$${formatCurrency(value)}`} />
+                <YAxis tickFormatter={formatYAxis} />
+                <Tooltip formatter={(value) => formatTooltipCurrency(value)} />
                 <Bar dataKey="totalNeto" fill="#3b82f6" name="Total Neto" />
               </BarChart>
             </ResponsiveContainer>
@@ -252,13 +251,12 @@ const SalesBySeller = () => {
                 <XAxis 
                   dataKey="name" 
                   interval={0}
-                  angle={-45}
                   textAnchor="end"
                   tick={{ fontSize: 12 }}
                   height={100}
                 />
-                <YAxis />
-                <Tooltip />
+                <YAxis tickFormatter={formatYAxis} />
+                <Tooltip formatter={(value) => formatTooltipNumber(value)} />
                 <Bar dataKey="planillas" fill="#10b981" name="Planillas" />
               </BarChart>
             </ResponsiveContainer>

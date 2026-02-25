@@ -4,7 +4,7 @@ import api from '../config/api';
 import { toast } from 'react-toastify';
 import { FiCalendar, FiTrendingUp, FiFilter, FiX } from 'react-icons/fi';
 import { ClipLoader } from 'react-spinners';
-import { formatCurrency } from '../utils/formatters';
+import { formatCurrency, formatYAxis, formatYAxisCurrency, formatTooltipCurrency, formatTooltipNumber } from '../utils/formatters';
 import {
   ResponsiveContainer,
   LineChart,
@@ -100,7 +100,7 @@ const Analysis = () => {
     planillas: client.orderCount || 0
   }));
 
-  // Datos para top productos (pie chart)
+  // Datos para top clientes en items (pie chart)
   const topProductsData = topProducts.slice(0, 8).map(product => ({
     name: product.productName && product.productName.length > 30 ? product.productName.substring(0, 30) + '...' : (product.productName || 'Sin nombre'),
     value: product.orderCount || 0
@@ -218,12 +218,12 @@ const Analysis = () => {
             <LineChart data={lineData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="mes" />
-              <YAxis yAxisId="left" />
-              <YAxis yAxisId="right" orientation="right" />
+              <YAxis yAxisId="left" tickFormatter={formatYAxis} />
+              <YAxis yAxisId="right" orientation="right" tickFormatter={formatYAxis} />
               <Tooltip 
                 formatter={(value, name) => {
-                  if (name === 'neto') return [`$${formatCurrency(value)}`, 'Total Neto'];
-                  return [value, 'Planillas'];
+                  if (name === 'Total Neto') return [formatTooltipCurrency(value), name];
+                  return [formatTooltipNumber(value), 'Planillas'];
                 }}
               />
               <Legend />
@@ -239,7 +239,7 @@ const Analysis = () => {
           <div className="card">
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Top Proveedores por Planillas</h2>
             <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={topClientsData} margin={{ top: 20, right: 30, left: 20, bottom: 90 }}>
+              <BarChart data={topClientsData} margin={{ top: 20, right: 30, left: 20, bottom: 100 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="name" 
@@ -249,16 +249,16 @@ const Analysis = () => {
                   tick={{ fontSize: 11 }}
                   height={110}
                 />
-                <YAxis />
-                <Tooltip />
+                <YAxis tickFormatter={formatYAxis} />
+                <Tooltip formatter={(value) => formatTooltipNumber(value)} />
                 <Bar dataKey="planillas" fill="#8b5cf6" name="Planillas" />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Top Productos */}
+          {/* Top Clientes en Items */}
           <div className="card">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Productos Más Vendidos</h2>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Clientes Más Frecuentes</h2>
             <ResponsiveContainer width="100%" height={350}>
               <PieChart>
                 <Pie
@@ -266,7 +266,7 @@ const Analysis = () => {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => percent > 0.05 ? `${(percent * 100).toFixed(0)}%` : ''}
+                  label={({ name, percent }) => percent > 0.08 ? `${(percent * 100).toFixed(0)}%` : ''}
                   outerRadius={100}
                   fill="#8884d8"
                   dataKey="value"
@@ -275,12 +275,13 @@ const Analysis = () => {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip formatter={(value) => formatTooltipNumber(value)} />
                 <Legend 
                   layout="vertical" 
                   align="right" 
                   verticalAlign="middle"
-                  wrapperStyle={{ fontSize: '12px', maxWidth: '200px' }}
+                  wrapperStyle={{ fontSize: '11px', maxWidth: '180px', maxHeight: '300px', overflow: 'auto' }}
+                  iconSize={10}
                 />
               </PieChart>
             </ResponsiveContainer>
@@ -316,15 +317,15 @@ const Analysis = () => {
             </div>
           </div>
 
-          {/* Tabla Top Productos */}
+          {/* Tabla Top Clientes en Items */}
           <div className="card">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Detalle Top Productos</h2>
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Detalle Top Clientes</h2>
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead>
                   <tr className="border-b dark:border-gray-700">
                     <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">#</th>
-                    <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Producto</th>
+                    <th className="text-left py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Cliente</th>
                     <th className="text-right py-3 px-4 font-semibold text-gray-700 dark:text-gray-300">Frecuencia</th>
                   </tr>
                 </thead>

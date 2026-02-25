@@ -14,7 +14,7 @@ import {
   FiDownload
 } from 'react-icons/fi';
 import { ClipLoader } from 'react-spinners';
-import { formatCurrency } from '../utils/formatters';
+import { formatCurrency, formatYAxis, formatYAxisCurrency, formatTooltipCurrency, formatTooltipNumber } from '../utils/formatters';
 import {
   PieChart,
   Pie,
@@ -177,7 +177,7 @@ const Dashboard = () => {
       color: 'bg-green-500',
     },
     {
-      title: 'Total Items',
+      title: 'Total Clientes',
       value: stats.general.totalItems,
       icon: FiPackage,
       color: 'bg-purple-500',
@@ -402,7 +402,10 @@ const Dashboard = () => {
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip 
+                  formatter={(value) => formatTooltipNumber(value)}
+                  contentStyle={{ fontSize: '12px' }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -411,16 +414,18 @@ const Dashboard = () => {
           <div className="card">
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Top Proveedores por Cantidad de Planillas</h2>
             <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={barData} margin={{ top: 20, right: 30, left: 20, bottom: 70 }}>
+              <BarChart data={barData} margin={{ top: 20, right: 30, left: 20, bottom: 90 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="name" 
                   interval={0}
-                  tick={{ fontSize: 12 }}
-                  height={60}
+                  angle={-45}
+                  textAnchor="end"
+                  tick={{ fontSize: 11 }}
+                  height={100}
                 />
-                <YAxis />
-                <Tooltip />
+                <YAxis tickFormatter={formatYAxis} />
+                <Tooltip formatter={(value) => formatTooltipNumber(value)} />
                 <Bar dataKey="planillas" fill="#3b82f6" />
               </BarChart>
             </ResponsiveContainer>
@@ -430,16 +435,18 @@ const Dashboard = () => {
           <div className="card">
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Top Proveedores por Facturación</h2>
             <ResponsiveContainer width="100%" height={350}>
-              <BarChart data={revenueBarData} margin={{ top: 20, right: 30, left: 20, bottom: 70 }}>
+              <BarChart data={revenueBarData} margin={{ top: 20, right: 30, left: 20, bottom: 90 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="name" 
                   interval={0}
-                  tick={{ fontSize: 12 }}
-                  height={60}
+                  angle={-45}
+                  textAnchor="end"
+                  tick={{ fontSize: 11 }}
+                  height={100}
                 />
-                <YAxis />
-                <Tooltip formatter={(value) => `$${formatCurrency(value)}`} />
+                <YAxis tickFormatter={formatYAxis} />
+                <Tooltip formatter={(value) => formatTooltipCurrency(value)} />
                 <Bar dataKey="revenue" fill="#10b981" />
               </BarChart>
             </ResponsiveContainer>
@@ -449,16 +456,16 @@ const Dashboard = () => {
           <div className="card">
             <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-4">Tendencia de Planillas (Últimos 30 Días)</h2>
             <ResponsiveContainer width="100%" height={350}>
-              <LineChart data={lineData} margin={{ top: 20, right: 30, left: 20, bottom: 70 }}>
+              <LineChart data={lineData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis 
                   dataKey="fecha" 
-                  interval={0}
-                  tick={{ fontSize: 12 }}
+                  interval="preserveStartEnd"
+                  tick={{ fontSize: 11 }}
                   height={60}
                 />
-                <YAxis />
-                <Tooltip />
+                <YAxis tickFormatter={formatYAxis} />
+                <Tooltip formatter={(value) => formatTooltipNumber(value)} />
                 <Legend />
                 <Line type="monotone" dataKey="planillas" stroke="#8b5cf6" name="Planillas" />
               </LineChart>

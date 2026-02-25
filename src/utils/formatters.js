@@ -23,6 +23,26 @@ export const formatNumber = (value) => {
   return new Intl.NumberFormat('es-AR').format(num);
 };
 
+// Formateador para ejes Y de gráficos (números enteros)
+export const formatYAxis = (value) => {
+  return formatNumber(value);
+};
+
+// Formateador para ejes Y de gráficos con moneda
+export const formatYAxisCurrency = (value) => {
+  return '$' + formatNumber(value);
+};
+
+// Formateador para tooltips de gráficos con moneda
+export const formatTooltipCurrency = (value) => {
+  return '$' + formatCurrency(value);
+};
+
+// Formateador para tooltips de gráficos con números enteros
+export const formatTooltipNumber = (value) => {
+  return formatNumber(value);
+};
+
 // Parsear números desde formato argentino a número
 export const parseCurrency = (value) => {
   if (!value) return 0;
